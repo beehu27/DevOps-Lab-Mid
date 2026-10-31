@@ -85,7 +85,7 @@ def test_invalid_url_rejected(client):
 
     response = client.post("/submit", json=data)
 
-    assert response.status_code == 200
+    assert response.status_code == 400
 
     # Check that invalid submission was not saved
     submissions = client.get("/submissions").get_json()
