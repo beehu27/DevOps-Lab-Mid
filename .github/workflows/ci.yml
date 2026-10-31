@@ -45,13 +45,20 @@ jobs:
           name: detailed-test-report
           path: reports/testreport.json
 
+      - name: Send email notification
+        if: always()
+        env:
+          MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+        run: |
+          python scripts/send_email.py
+
       - name: Mark pipeline as failed if tests failed
         if: steps.tests.outcome == 'failure'
         run: |
           Write-Host "One or more tests failed."
           exit 1
 
-  
   deploy:
     needs: test
     if: success()
