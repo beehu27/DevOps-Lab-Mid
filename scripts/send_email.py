@@ -10,7 +10,7 @@ report_path = "reports/testreport.json"
 with open(report_path, "r", encoding="utf-8") as file:
     report = json.load(file)
 
-# Read credentials from GitHub Secrets (environment variables)
+# Read credentials from GitHub Secrets
 email_username = os.environ["MAIL_USERNAME"]
 email_password = os.environ["MAIL_PASSWORD"]
 
@@ -45,9 +45,10 @@ Errors: {summary.get('errors')}
 Test Details:
 """
 
+# Add actual test names and results
 for test in report.get("tests", []):
     body += f"""
-Test Name: {test.get('name')}
+Test Name: {test.get('test_name', 'Unknown test')}
 Result: {test.get('result')}
 Failure Message: {test.get('failure_message')}
 """
