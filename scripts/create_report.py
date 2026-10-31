@@ -31,7 +31,9 @@ def get_repository():
     if repository:
         return repository
 
-    remote = git_command(["git", "config", "--get", "remote.origin.url"])
+    remote = git_command(
+        ["git", "config", "--get", "remote.origin.url"]
+    )
 
     if remote != "Not available":
         remote = remote.replace(".git", "")
@@ -53,6 +55,10 @@ def create_report():
     test_results = []
 
     for test in pytest_data.get("tests", []):
+
+        # Get the actual test name from pytest JSON report
+        node_id = test.get("nodeid") or test.get("name") or "Unknown test"
+
         outcome = test.get("outcome", "unknown")
         failure_message = None
 
@@ -65,7 +71,7 @@ def create_report():
                 break
 
         test_results.append({
-            "test_name": test.get("nodeid", "Unknown test"),
+            "test_name": node_id,
             "result": outcome,
             "failure_message": failure_message
         })
@@ -81,23 +87,33 @@ def create_report():
 
     report = {
         "repository": get_repository(),
+
         "branch": os.getenv(
             "GITHUB_REF_NAME",
             git_command(["git", "branch", "--show-current"])
         ),
+
         "commit_sha": os.getenv(
             "GITHUB_SHA",
             git_command(["git", "rev-parse", "HEAD"])
         ),
-        "pipeline_run_id": os.getenv("GITHUB_RUN_ID", "Local run"),
+
+        "pipeline_run_id": os.getenv(
+            "GITHUB_RUN_ID",
+            "Local run"
+        ),
+
         "timestamp": datetime.now(timezone.utc).isoformat(),
+
         "tests": test_results,
+
         "summary": {
             "total": total,
             "passed": passed,
             "failed": failed,
             "errors": errors
         },
+
         "overall_status": overall_status
     }
 
@@ -108,6 +124,9 @@ def create_report():
 
     print(f"Report created successfully: {OUTPUT_FILE}")
     print(f"Overall status: {overall_status}")
+    print(f"Total tests: {total}")
+    print(f"Passed tests: {passed}")
+    print(f"Failed tests: {failed}")
 
 
 if __name__ == "__main__":
