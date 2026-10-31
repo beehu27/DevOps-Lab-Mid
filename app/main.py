@@ -1,126 +1,95 @@
-from flask import Flask, request, jsonify
+
+from flask import Flask, request, jsonify, render_template
 import json
 import os
-import re
-
+from urllib.parse import urlparse
 
 app = Flask(__name__)
 
-
-# File where submissions will be stored
-FILE = "app/submissions.json"
-
-
-# Create empty file if it does not exist
-if not os.path.exists(FILE):
-    with open(FILE, "w") as f:
-        json.dump([], f)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+FILE = os.path.join(BASE_DIR, "submissions.json")
 
 
-
-# Function to check URL format
 def valid_url(url):
+    if not isinstance(url, str):
+        return False
 
-    pattern = r'^https?://'
+    try:
+        parsed = urlparse(url.strip())
+        return (
+            parsed.scheme in ("http", "https")
+            and bool(parsed.netloc)
+            and "." in parsed.netloc
+            and " " not in parsed.netloc
+        )
+    except ValueError:
+        return False
 
-    return re.match(pattern, url)
+
+def read_submissions():
+    if not os.path.exists(FILE):
+        return []
+
+    with open(FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
 
 
+def save_submissions(submissions):
+    with open(FILE, "w", encoding="utf-8") as f:
+        json.dump(submissions, f, indent=4)
 
-# Home page
+
 @app.route("/")
 def home():
-
-    return "Assignment Submission Portal"
-
+    return render_template("index.html")
 
 
-# Submit assignment
 @app.route("/submit", methods=["POST"])
 def submit():
+    data = request.get_json(silent=True) if request.is_json else request.form
 
+    if not data:
+        return jsonify({"message": "Submission data required"}), 400
 
-    data = request.json
+    required_fields = ["name", "registration", "title", "url"]
 
-
-    required_fields = [
-        "name",
-        "registration",
-        "title",
-        "url"
-    ]
-
-
-    # Check empty fields
     for field in required_fields:
+        if not data.get(field) or not data.get(field).strip():
+            return jsonify({
+                "message": f"{field} required"
+            }), 400
 
-        if not data.get(field):
+    if not valid_url(data["url"].strip()):
+        return jsonify({"message": "Invalid URL"}), 400
 
-            return jsonify(
-                {
-                    "message": f"{field} required"
-                }
-            ),400
+    submission = {
+        "name": data["name"].strip(),
+        "registration": data["registration"].strip(),
+        "title": data["title"].strip(),
+        "url": data["url"].strip()
+    }
 
+    submissions = read_submissions()
+    submissions.append(submission)
+    save_submissions(submissions)
 
+    if request.is_json:
+        return jsonify({
+            "message": "Submission saved",
+            "submission": submission
+        }), 201
 
-    # Check URL
-    if not valid_url(data["url"]):
-
-        return jsonify(
-            {
-                "message":"Invalid URL"
-            }
-        ),400
-
-
-
-    # Read old submissions
-    with open(FILE,"r") as f:
-
-        submissions=json.load(f)
-
-
-
-    # Add new submission
-    submissions.append(data)
-
-
-
-    # Save submissions
-    with open(FILE,"w") as f:
-
-        json.dump(
-            submissions,
-            f,
-            indent=4
-        )
-
-
-
-    return jsonify(
-        {
-            "message":"Submission saved"
-        }
+    return (
+        '<p>Submission saved successfully!</p>'
+        '<a href="/">Submit another assignment</a> | '
+        '<a href="/submissions">View submissions</a>'
     )
 
 
-
-# Show all submissions
 @app.route("/submissions")
 def show_submissions():
+    return jsonify(read_submissions())
 
 
-    with open(FILE,"r") as f:
-
-        submissions=json.load(f)
-
-
-    return jsonify(submissions)
-
-
-
-# Run application
-if __name__=="__main__":
-
+if __name__ == "__main__":
     app.run(debug=True)

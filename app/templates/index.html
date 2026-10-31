@@ -1,0 +1,36 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assignment Submission Portal</title>
+</head>
+<body>
+    <h1>Assignment Submission Portal</h1>
+
+    <form action="/submit" method="POST">
+        <label for="name">Student Name:</label><br>
+        <input type="text" id="name" name="name" required>
+        <br><br>
+
+        <label for="registration">Registration Number:</label><br>
+        <input type="text" id="registration" name="registration" required>
+        <br><br>
+
+        <label for="title">Assignment Title:</label><br>
+        <input type="text" id="title" name="title" required>
+        <br><br>
+
+        <label for="url">Submission URL:</label><br>
+        <input type="url" id="url" name="url"
+               placeholder="https://github.com/username/repository"
+               required>
+        <br><br>
+
+        <button type="submit">Submit Assignment</button>
+    </form>
+
+    <p><a href="/submissions">View All Submissions</a></p>
+</body>
+</html>
