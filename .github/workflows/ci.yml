@@ -1,3 +1,4 @@
+
 name: DevOps CI Pipeline
 
 on:
@@ -10,7 +11,7 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
       - name: Checkout code
@@ -36,16 +37,20 @@ jobs:
         run: |
           python scripts/create_report.py
 
+      - name: Send report to local receiver
+        if: always()
+        run: |
+          Invoke-RestMethod -Uri "http://127.0.0.1:5001/report" -Method Post -ContentType "application/json" -InFile "reports/testreport.json"
+
       - name: Upload test report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: detailed-test-report
           path: reports/testreport.json
-          if-no-files-found: warn
 
       - name: Mark pipeline as failed if tests failed
         if: steps.tests.outcome == 'failure'
         run: |
-          echo "One or more tests failed."
+          Write-Host "One or more tests failed."
           exit 1
